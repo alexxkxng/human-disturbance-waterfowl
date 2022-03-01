@@ -1,0 +1,131 @@
+## Script name: diversity analysis .r
+##
+## Purpose of script: This script analyses the effect of 2 human disturbance variables on waterfowl alpha diversity using a vector generalized linear model. 
+##
+## Author: Alexandra King
+## Swansea University, Biology BSc
+
+rm(list = ls())
+
+DiversityData <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/waterfowl diversity no sum data.csv")
+
+Diversity <- DiversityData[,2:10] #data frame containing all bird species
+boxplot(Diversity) #boxplot of species
+
+DiversityVar <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/diversity waterfowl only no sum.csv")
+
+library(vegan)
+
+#calculate shannon H value for each community
+DiversityVar$Shannon <- diversity(Diversity, index = "shannon", MARGIN = 1, base = exp(1))
+
+hist(DiversityVar$Shannon)
+
+#use a tobit model as it accounts for the left censoring in the dependent variable; aka the zero inflated data, and is suited for continuous variables
+
+library(VGAM)
+
+div <- vglm(Shannon ~ Road.distance + land.usage, tobit(), data = DiversityVar)
+summary(div)
+#run tobit model with vector generalized linear model
+#only intercept : 2 is significant
+
+ctable <- coef(summary(div))
+pvals <- 2 * pt(abs(ctable[, "z value"]), df.residual(div), lower.tail = FALSE)
+cbind(ctable, pvals)
+#calculate p values
+
+div2 <- vglm(Shannon ~ Road.distance, tobit(), data = DiversityVar)
+#test overall significance of land usage by fitting model without it
+
+(p <- pchisq(2 * (logLik(div) - logLik(div2)), df = 2, lower.tail = FALSE))
+#compare significance of both models
+#the overall affect of surrounding land usage is not statistically significant
+
+DiversityVar$yhat <- fitted(div)[,1]
+DiversityVar$rr <- resid(div, type = "response")
+DiversityVar$rp <- resid(div, type = "pearson")[,1]
+
+par(mfcol = c(2, 3))
+
+with(DiversityVar, {
+  plot(yhat, rr, main = "Fitted vs Residuals")
+  qqnorm(rr)
+  plot(yhat, rp, main = "Fitted vs Pearson Residuals")
+  qqnorm(rp)
+  plot(Shannon, rp, main = "Actual vs Pearson Residuals")
+  plot(Shannon, yhat, main = "Actual vs Fitted")
+})
+
+(r <- with(DiversityVar, cor(yhat, Shannon)))
+#The correlation between the predicted and observed values of Shannon is 0.1708368
+r^2
+#the multiple squared correlation indicates the predicted values share 02.92% of their variance with Shannon
+#this suggests that surrounding land usage and distance from nearest road do not account for almost any variance 
+#for the alpha diversity
+
+
+
+
+
+
+rm(list = ls())
+
+DiversityData <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/waterfowl diversity no sum data historic.csv")
+
+Diversity <- DiversityData[,4:24] #data frame containing all bird species
+boxplot(Diversity) #boxplot of species
+
+DiversityVar <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/diversity waterfowl only no sum historic.csv")
+
+
+library(vegan)
+
+#calculate shannon H value for each community
+DiversityVar$Shannon <- diversity(Diversity, index = "shannon", MARGIN = 1, base = exp(1))
+
+hist(DiversityVar$Shannon)
+
+#use a tobit model as it accounts for the left censoring in the dependent variable; aka the zero inflated data, and is suited for continuous variables
+
+library(VGAM)
+
+div <- vglm(Shannon ~ NearestRoad + LandUse, tobit(), data = DiversityVar)
+summary(div)
+#run tobit model with vector generalized linear model
+#intercept : 1 and land use are significant
+
+ctable <- coef(summary(div))
+pvals <- 2 * pt(abs(ctable[, "z value"]), df.residual(div), lower.tail = FALSE)
+cbind(ctable, pvals)
+#calculate p values
+#land use is significant
+
+div2 <- vglm(Shannon ~ NearestRoad, tobit(), data = DiversityVar)
+#test overall significance of land usage by fitting model without it
+
+(p <- pchisq(2 * (logLik(div) - logLik(div2)), df = 2, lower.tail = FALSE))
+#compare significance of both models
+#the overall affect of surrounding land usage is statistically significant (0.011)
+
+DiversityVar$yhat <- fitted(div)[,1]
+DiversityVar$rr <- resid(div, type = "response")
+DiversityVar$rp <- resid(div, type = "pearson")[,1]
+
+par(mfcol = c(2, 3))
+
+with(DiversityVar, {
+  plot(yhat, rr, main = "Fitted vs Residuals")
+  qqnorm(rr)
+  plot(yhat, rp, main = "Fitted vs Pearson Residuals")
+  qqnorm(rp)
+  plot(Shannon, rp, main = "Actual vs Pearson Residuals")
+  plot(Shannon, yhat, main = "Actual vs Fitted")
+})
+
+(r <- with(DiversityVar, cor(yhat, Shannon)))
+#The correlation between the predicted and observed values of Shannon is 0.6292327
+r^2
+#the multiple squared correlation indicates the predicted values share 39.6% of their variance with Shannon
+#this suggests that surrounding land usage and distance from nearest road account for some of the variance 
+#for the alpha diversity

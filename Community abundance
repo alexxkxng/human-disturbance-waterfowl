@@ -1,0 +1,96 @@
+Script name: 2021 permanova.r
+##
+## Purpose of script: This script analyses the effect of 6 human disturbance variables on waterfowl populations using PERMANOVA. 
+##
+## Author: Alexandra King
+## Swansea University, Biology BSc
+
+rm(list = ls())
+
+#successful permanova with bray, interactions removed
+library(vegan)
+bird <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/bird data sheet 7.csv")
+Bird2 <- na.omit(bird)
+bird.matrix<-as.matrix(Bird2[,2:19])
+bird.dist<-vegdist(bird.matrix, method="bray")
+bird.div<-adonis2(bird.dist ~ pH+Nitrate+Nitrite+NearestRoad+NearestARoad+LandUseNum, 
+                  data=Bird2, permutations = 10000, 
+                  method="bray", Strata="PLOT")
+bird.div
+
+#successful permanova with bray, interactions removed, log10 transformed bird matrix
+library(vegan)
+bird <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/bird data sheet 7.csv")
+Bird2 <- na.omit(bird)
+bird.matrix<-as.matrix(Bird2[,2:19])
+logbird.matrix <- log10(bird.matrix +1)
+bird.dist<-vegdist(logbird.matrix, method="bray")
+bird.div<-adonis2(bird.dist ~ pH+Nitrate+Nitrite+NearestRoad+NearestARoad+LandUseNum, 
+                  data=Bird2, permutations = 10000, 
+                  method="bray", Strata="PLOT")
+bird.div
+
+nitrate.bd <- betadisper(bird.dist, Bird2$Nitrate)
+anova(nitrate.bd)
+permutest(nitrate.bd) #nitrate PERMDISP does not have a significant effect, therefore it is only a result of location
+
+road.bd <- betadisper(bird.dist, Bird2$NearestRoad)
+anova(road.bd)
+permutest(road.bd)#nearest road has a highly significant effect, therefore it is a result of dispersion effect, 
+#and location may also have an effect
+
+roadA.bd <- betadisper(bird.dist, Bird2$NearestARoad)
+anova(roadA.bd)
+permutest(roadA.bd) #nearest A road does not have a significant effect, therefore it is only a result of location effects
+
+land.bd <- betadisper(bird.dist, Bird2$LandUseNum)
+anova(land.bd)
+permutest(land.bd) #surrounding land usage does not have a significant effect, therefore it is only a result of location effects
+
+
+library(vegan)
+library(ggplot2)
+Bird2 <- bird[,2:19] #input bird data into numeric data frame
+Bird3 <- log10(Bird2 +1)
+BirdOmit <- na.omit(Bird3) #omit NA values
+BirdEn <- as.matrix(BirdOmit) #input data with NA values omitted into matrix
+Birdnmds <- metaMDS(BirdEn, distance = "bray") #calculate nMDS
+Birdnmds #output results from nMDS
+plot(Birdnmds) #plot basic nMDS graph
+data.scores <- as.data.frame(scores(Birdnmds)) #input nMDS output into data frame suitable for plotting ordination
+
+NearestRoad <- as.factor(bird$NearestRoad)
+
+BirdnmdsPlot <- ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(size = 6, aes( colour = NearestRoad))+ 
+  theme(axis.text.y = element_text(colour = "black", size = 14, face = "bold"), 
+        axis.text.x = element_text(colour = "black", face = "bold", size = 14), 
+        legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+        legend.position = "right", axis.title.y = element_text(face = "bold", size = 18), 
+        axis.title.x = element_text(face = "bold", size = 18, colour = "black"), 
+        legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+        panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+        legend.key=element_blank()) + 
+  labs(x = "NMDS1", colour = "Nearest road (m)", y = "NMDS2")  + 
+  scale_colour_grey(start = 0.8, end = 0.1) +
+  theme(axis.text.x = element_blank(),  # remove x-axis text
+        axis.text.y = element_blank(), # remove y-axis text
+        axis.ticks = element_blank(),  # remove axis ticks
+        axis.title.x = element_text(size=18), 
+        axis.title.y = element_text(size=18)) #change axis label size
+
+BirdnmdsPlot 
+
+#successful permanova with bray, interactions removed, log10 transformed bird matrix, using only nearest road
+library(vegan)
+bird <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/bird data sheet 7.csv")
+Bird2 <- na.omit(bird)
+bird.matrix<-as.matrix(Bird2[,2:19])
+logbird.matrix <- log10(bird.matrix +1)
+bird.dist<-vegdist(logbird.matrix, method="bray")
+bird.div<-adonis2(bird.dist ~ NearestRoad, 
+                  data=Bird2, permutations = 10000, 
+                  method="bray", Strata="PLOT")
+bird.div
+
+#nearest road has highly significant affect, but very low R2 value

@@ -1,0 +1,63 @@
+##Script name: individual species abundance .r 
+##
+## Purpose of script: This script analyses the effect of 5 human disturbance variables on waterfowl species using a linear model. 
+##
+## Author: Alexandra King
+## Swansea University, Biology BSc
+
+rm(list = ls())
+
+waterfowl <- read.csv("C:/Users/Alex/OneDrive - Swansea University/Dissertation/Data CSV/water fowl only data .csv")
+
+
+par( mfrow = c(2, 2))
+mallard <- lm(Mallard ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(mallard)
+summary(mallard)
+
+logbird <- log10(waterfowl[,2:10] +1)
+
+mallard <- lm(logbird$Mallard ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(mallard)
+summary(mallard)
+#no variable has significant effect
+
+mute <- lm(logbird$Mute.Swan ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(mute)
+summary(mute)
+#nitrate has significant effect
+
+pekin <- lm(logbird$Pekin.duck ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(pekin)
+summary(pekin)
+#nitrate, nitrite, nearest road and land usage have significant effect
+
+teal <- lm(logbird$Teal ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(teal)
+summary(teal)
+#nitrite has significant effect
+
+grey <- lm(logbird$Greylag.goose ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(grey)
+summary(grey)
+#no variable has significant effect
+
+tuft <- lm(logbird$Tufted.duck ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(tuft)
+summary(tuft)
+#nitrite and nearest road have significant effect
+
+pochard <- lm(logbird$Pochard ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(pochard)
+summary(pochard)
+#no variable has significant effect
+
+can <- lm(logbird$Canada.goose ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(can)
+summary(can)
+#no variable has significant effect
+
+emb <- lm(logbird$Embden.goose ~ pH+Nitrate+Nitrite+NearestRoad+LandUseNum, data = waterfowl)
+plot(emb)
+summary(emb)
+#not enough data
